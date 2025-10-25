@@ -8,6 +8,7 @@ Handles:
 
 import os
 import re
+import threading
 from dotenv import load_dotenv
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
@@ -21,6 +22,36 @@ app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
+
+# Join all public channels (runs in background)
+def join_all_public_channels_async():
+    def _worker():
+        try:
+            cursor = None
+            joined = 0
+            while True:
+                resp = app.client.conversations_list(types="public_channel", limit=200, cursor=cursor)
+                channels = resp.get("channels", [])
+                for ch in channels:
+                    if ch.get("is_member") or ch.get("is_archived"):
+                        continue
+                    cid = ch.get("id")
+                    try:
+                        app.client.conversations_join(channel=cid)
+                        joined += 1
+                        print(f"[auto-join] Joined public channel {cid}")
+                    except Exception as e:
+                        # Ignore if already in channel or cannot join
+                        print(f"[auto-join] Could not join {cid}: {e}")
+                cursor = resp.get("response_metadata", {}).get("next_cursor")
+                if not cursor:
+                    break
+            print(f"[auto-join] Completed joining public channels. Joined: {joined}")
+        except Exception as e:
+            print(f"[auto-join] Error: {e}")
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+
 
 
 # Slash command: /ping
@@ -45,7 +76,7 @@ def handle_hello_message(message, say):
 
 # Slash command: /add-all
 @app.command("/add-all")
-def handle_add_all_command(ack, command, client):
+def handle_add_all_command(ack, command, client, respond):
     """Handle the /add-all slash command - adds all workspace members to channel"""
     ack()
 
@@ -73,20 +104,14 @@ def handle_add_all_command(ack, command, client):
         users_to_add = [u for u in active_users if u["id"] not in current_members]
 
         if not users_to_add:
-            client.chat_postEphemeral(
-                channel=channel_id,
-                user=user_id,
-                text="✅ All workspace members are already in this channel!"
-            )
+            respond(text="✅ All workspace members are already in this channel!", replace_original=False)
             return
 
         # Create user mention list
         user_mentions = " ".join([f"<@{u['id']}>" for u in users_to_add])
 
-        # Send confirmation message (ephemeral - only visible to command user)
-        client.chat_postEphemeral(
-            channel=channel_id,
-            user=user_id,
+        # Send confirmation message (ephemeral via response_url)
+        respond(
             text=f"⚠️ You're about to add {len(users_to_add)} members to this channel:\n\n{user_mentions}",
             blocks=[
                 {
@@ -128,23 +153,24 @@ def handle_add_all_command(ack, command, client):
 
     except Exception as e:
         print(f"[/add-all] Error: {e}")
-        client.chat_postEphemeral(
-            channel=channel_id,
-            user=user_id,
-            text=f"❌ Error: {str(e)}"
-        )
+        respond(text="❌ I may not be in this channel. Please add me first or try again.\n/invite <@A09JJ5C2Q2X>")
 
 
 # Handle confirmation button click
 @app.action("confirm_add_all")
-def handle_confirm_add_all(ack, body, client):
+def handle_confirm_add_all(ack, body, client, respond):
     """Handle the confirm button click"""
     ack()
 
     channel_id = body["actions"][0]["value"]
-    user_id = body["user"]["id"]
 
     try:
+        # Ensure bot is in the channel (auto-join for public channels)
+        try:
+            client.conversations_join(channel=channel_id)
+        except Exception as _:
+            pass
+
         # Get all workspace members again (in case it changed)
         users_response = client.users_list()
         all_users = users_response["members"]
@@ -164,6 +190,10 @@ def handle_confirm_add_all(ack, body, client):
         # Find users not in channel
         users_to_add = [u for u in active_users if u["id"] not in current_members]
 
+        if not users_to_add:
+            respond(replace_original=True, text="✅ Everyone is already here.")
+            return
+
         # Add users to channel
         added_count = 0
         failed_users = []
@@ -176,63 +206,40 @@ def handle_confirm_add_all(ack, body, client):
                 failed_users.append(user["id"])
                 print(f"[/add-all] Failed to add user {user['id']}: {e}")
 
-        # Update the original message
         success_msg = f"✅ Successfully added {added_count} members to this channel!"
         if failed_users:
             success_msg += f"\n⚠️ Failed to add {len(failed_users)} users."
 
-        client.chat_update(
-            channel=channel_id,
-            ts=body["message"]["ts"],
-            text=success_msg,
-            blocks=[
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": success_msg
-                    }
-                }
-            ]
-        )
+        respond(replace_original=True, text=success_msg)
 
         print(f"[/add-all] Added {added_count} users to channel {channel_id}")
 
     except Exception as e:
         print(f"[/add-all] Error during confirmation: {e}")
-        client.chat_update(
-            channel=channel_id,
-            ts=body["message"]["ts"],
-            text=f"❌ Error: {str(e)}",
-            blocks=[]
-        )
+        respond(replace_original=True, text="❌ Error: I may not be in this channel. Please add me first and try again.")
 
 
 # Handle cancel button click
 @app.action("cancel_add_all")
-def handle_cancel_add_all(ack, body, client):
+def handle_cancel_add_all(ack, body, respond):
     """Handle the cancel button click"""
     ack()
 
-    channel_id = body["channel"]["id"]
-
-    # Update the original message
-    client.chat_update(
-        channel=channel_id,
-        ts=body["message"]["ts"],
-        text="❌ Cancelled. No users were added.",
-        blocks=[
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "❌ Cancelled. No users were added."
-                }
-            }
-        ]
-    )
+    respond(replace_original=True, text="❌ Cancelled. No users were added.")
 
     print(f"[/add-all] Cancelled by user {body['user']['id']}")
+
+
+# Auto-join new public channels when they're created
+@app.event("channel_created")
+def handle_channel_created(event, client):
+    try:
+        cid = event.get("channel", {}).get("id")
+        if cid:
+            client.conversations_join(channel=cid)
+            print(f"[auto-join] Joined newly created channel {cid}")
+    except Exception as e:
+        print(f"[auto-join] Failed to join newly created channel: {e}")
 
 
 # Health check endpoint (useful for monitoring)
@@ -242,10 +249,13 @@ def handle_app_mention(event, say):
     say("👋 I'm alive! Try `/ping` or say 'hello'!")
 
 
+
 if __name__ == "__main__":
     # Start the app on port 3000
     # The app will listen for incoming requests from Slack
     port = int(os.environ.get("PORT", 3000))
     print(f"⚡️ Slack bot is starting on port {port}...")
+    # Kick off background auto-join on startup
+    join_all_public_channels_async()
     app.start(port=port)
 
