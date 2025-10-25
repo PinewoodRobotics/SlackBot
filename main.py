@@ -58,11 +58,12 @@ def join_all_public_channels_async():
 @app.command("/ping")
 def handle_ping_command(ack, respond, command):
     """Handle the /ping slash command"""
+    print(f"[DEBUG /ping] Command received from user {command['user_id']} in channel {command['channel_id']}")
     # Acknowledge the command request
     ack()
     # Respond with "Pong!"
     respond("Pong!")
-    print(f"[/ping] Command received from user {command['user_name']}")
+    print(f"[DEBUG /ping] Response sent")
 
 
 # Message listener: detects "hello" (case-insensitive)
@@ -70,14 +71,16 @@ def handle_ping_command(ack, respond, command):
 def handle_hello_message(message, say):
     """Handle messages containing 'hello' (case-insensitive)"""
     user_id = message.get("user")
+    print(f"[DEBUG hello] Message detected from user {user_id} in channel {message.get('channel')}")
     say(f"Hey there <@{user_id}>!")
-    print(f"[hello] Message detected from user {user_id}")
+    print(f"[DEBUG hello] Response sent")
 
 
 # Slash command: /add-all
 @app.command("/add-all")
 def handle_add_all_command(ack, command, client, respond):
     """Handle the /add-all slash command - adds all workspace members to channel"""
+    print(f"[DEBUG /add-all] Command received from user {command['user_id']} in channel {command['channel_id']}")
     ack()
 
     channel_id = command["channel_id"]
@@ -158,11 +161,13 @@ def handle_add_all_command(ack, command, client, respond):
 
 # Handle confirmation button click
 @app.action("confirm_add_all")
-def handle_confirm_add_all(ack, body, client, respond):
+def handle_confirm_add_all(ack, body, client):
     """Handle the confirm button click"""
+    print(f"[DEBUG confirm_add_all] Button clicked by user {body['user']['id']}")
     ack()
 
     channel_id = body["actions"][0]["value"]
+    response_url = body["response_url"]
 
     try:
         # Ensure bot is in the channel (auto-join for public channels)
@@ -191,7 +196,10 @@ def handle_confirm_add_all(ack, body, client, respond):
         users_to_add = [u for u in active_users if u["id"] not in current_members]
 
         if not users_to_add:
-            respond(replace_original=True, text="✅ Everyone is already here.")
+            # Delete the original message
+            import requests
+            requests.post(response_url, json={"delete_original": True})
+            client.chat_postMessage(channel=channel_id, text="✅ Everyone is already here.")
             return
 
         # Add users to channel
@@ -211,44 +219,57 @@ def handle_confirm_add_all(ack, body, client, respond):
             success_msg += f"\n⚠️ Failed to add {len(failed_users)} users."
 
         # Delete the confirmation message and post success in channel
-        respond(delete_original=True)
+        import requests
+        requests.post(response_url, json={"delete_original": True})
         client.chat_postMessage(channel=channel_id, text=success_msg)
 
         print(f"[/add-all] Added {added_count} users to channel {channel_id}")
 
     except Exception as e:
         print(f"[/add-all] Error during confirmation: {e}")
-        respond(replace_original=True, text="❌ Error: I may not be in this channel. Please add me first and try again.")
+        import requests
+        requests.post(response_url, json={
+            "replace_original": True,
+            "text": "❌ Error: I may not be in this channel. Please add me first and try again."
+        })
 
 
 # Handle cancel button click
 @app.action("cancel_add_all")
-def handle_cancel_add_all(ack, body, respond):
+def handle_cancel_add_all(ack, body):
     """Handle the cancel button click"""
+    print(f"[DEBUG cancel_add_all] Button clicked by user {body['user']['id']}")
     ack()
 
-    respond(delete_original=True)
+    response_url = body["response_url"]
 
-    print(f"[/add-all] Cancelled by user {body['user']['id']}")
+    # Delete the original message
+    import requests
+    requests.post(response_url, json={"delete_original": True})
+
+    print(f"[DEBUG cancel_add_all] Message deleted")
 
 
 # Auto-join new public channels when they're created
 @app.event("channel_created")
 def handle_channel_created(event, client):
+    print(f"[DEBUG channel_created] Event received: {event}")
     try:
         cid = event.get("channel", {}).get("id")
         if cid:
             client.conversations_join(channel=cid)
-            print(f"[auto-join] Joined newly created channel {cid}")
+            print(f"[DEBUG channel_created] Joined newly created channel {cid}")
     except Exception as e:
-        print(f"[auto-join] Failed to join newly created channel: {e}")
+        print(f"[DEBUG channel_created] Failed to join newly created channel: {e}")
 
 
 # Health check endpoint (useful for monitoring)
 @app.event("app_mention")
 def handle_app_mention(event, say):
     """Handle when the bot is mentioned"""
+    print(f"[DEBUG app_mention] Event received from user {event.get('user')} in channel {event.get('channel')}")
     say("👋 I'm alive! Try `/ping` or say 'hello'!")
+    print(f"[DEBUG app_mention] Response sent")
 
 
 
