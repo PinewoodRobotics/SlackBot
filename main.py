@@ -8,10 +8,15 @@ Handles:
 
 import os
 import re
+import sys
 import threading
 from dotenv import load_dotenv
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
+
+# Force unbuffered output for logging
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 
 # Load environment variables from .env file
 load_dotenv()
