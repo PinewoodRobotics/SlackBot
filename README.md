@@ -6,6 +6,7 @@ A dead-simple Slack bot built with Bolt for Python. No Docker, no complexity, ju
 
 - **`/ping` slash command** → Responds with "Pong!"
 - **"hello" message listener** → Detects "hello" (case-insensitive) and responds with "Hey there!"
+- **`/add-all` slash command** → Adds all workspace members to the channel with confirmation
 
 ## Quick Start (Local Development)
 
@@ -46,6 +47,10 @@ python main.py
    - `groups:history` - Read messages in private channels
    - `im:history` - Read direct messages
    - `mpim:history` - Read group messages
+   - `users:read` - List workspace members
+   - `channels:read` - Read channel info
+   - `channels:manage` - Invite users to channels
+   - `groups:write` - Invite users to private channels
 
 4. Scroll up and click **"Install to Workspace"**
 5. Authorize the app
@@ -59,16 +64,17 @@ python main.py
 3. **Copy the "Signing Secret"**
    - Save this as `SLACK_SIGNING_SECRET` in your `.env` file
 
-### Step 4: Create Slash Command
+### Step 4: Create Slash Commands
 
 1. Go to **"Slash Commands"** in your app settings
-2. Click **"Create New Command"**
-3. Fill in:
+2. Click **"Create New Command"** for `/ping`:
    - **Command:** `/ping`
    - **Request URL:** `https://your-domain.com/slack/events`
    - **Short Description:** "Ping the bot"
-   - **Usage Hint:** (leave empty)
-4. Click **"Save"**
+3. Click **"Create New Command"** for `/add-all`:
+   - **Command:** `/add-all`
+   - **Request URL:** `https://your-domain.com/slack/events`
+   - **Short Description:** "Add all workspace members to this channel"
 
 ### Step 5: Enable Event Subscriptions
 
@@ -260,7 +266,7 @@ Slack will verify the URL (should show a green checkmark ✓)
 
 ## 🧪 Testing
 
-### Test Slash Command
+### Test `/ping` Command
 
 In any Slack channel where the bot is added:
 ```
@@ -278,6 +284,14 @@ HELLO
 hey hello there
 ```
 Expected response: `Hey there <@your_username>!`
+
+### Test `/add-all` Command
+
+In any channel where the bot is added:
+```
+/add-all
+```
+Expected: Ephemeral message (only visible to you) showing all members to be added with Confirm/Cancel buttons. Click Confirm to add them all.
 
 ---
 
