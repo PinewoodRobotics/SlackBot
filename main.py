@@ -8,8 +8,12 @@ Handles:
 
 import os
 import re
+from dotenv import load_dotenv
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize the Slack app
 # For production (HTTP mode), remove socket_mode lines and use signing_secret
