@@ -153,7 +153,7 @@ def handle_add_all_command(ack, command, client, respond):
 
     except Exception as e:
         print(f"[/add-all] Error: {e}")
-        respond(text="❌ I may not be in this channel. Please add me first or try again.\n/invite <@A09JJ5C2Q2X>")
+        respond(text="❌ Something went wrong. Most likely, you need to invite the Pinewood Robot to your channel first (especially if its a private channel).")
 
 
 # Handle confirmation button click
@@ -210,7 +210,9 @@ def handle_confirm_add_all(ack, body, client, respond):
         if failed_users:
             success_msg += f"\n⚠️ Failed to add {len(failed_users)} users."
 
-        respond(replace_original=True, text=success_msg)
+        # Delete the confirmation message and post success in channel
+        respond(delete_original=True)
+        client.chat_postMessage(channel=channel_id, text=success_msg)
 
         print(f"[/add-all] Added {added_count} users to channel {channel_id}")
 
@@ -225,7 +227,7 @@ def handle_cancel_add_all(ack, body, respond):
     """Handle the cancel button click"""
     ack()
 
-    respond(replace_original=True, text="❌ Cancelled. No users were added.")
+    respond(delete_original=True)
 
     print(f"[/add-all] Cancelled by user {body['user']['id']}")
 
