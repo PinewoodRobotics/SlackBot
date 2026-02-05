@@ -71,16 +71,6 @@ def handle_ping_command(ack, respond, command):
     print(f"[DEBUG /ping] Response sent")
 
 
-# Message listener: detects "hello" (case-insensitive)
-@app.message(re.compile("hello", re.IGNORECASE))
-def handle_hello_message(message, say):
-    """Handle messages containing 'hello' (case-insensitive)"""
-    user_id = message.get("user")
-    print(f"[DEBUG hello] Message detected from user {user_id} in channel {message.get('channel')}")
-    say(f"Hey there <@{user_id}>!")
-    print(f"[DEBUG hello] Response sent")
-
-
 # Slash command: /add-all
 @app.command("/add-all")
 def handle_add_all_command(ack, command, client, respond):
@@ -273,7 +263,7 @@ def handle_channel_created(event, client):
 def handle_app_mention(event, say):
     """Handle when the bot is mentioned"""
     print(f"[DEBUG app_mention] Event received from user {event.get('user')} in channel {event.get('channel')}")
-    say("👋 I'm alive! Try `/ping` or say 'hello'!")
+    say(f"Hey there <@{event.get('user')}>!")
     print(f"[DEBUG app_mention] Response sent")
 
 
