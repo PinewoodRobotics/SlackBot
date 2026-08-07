@@ -10,19 +10,29 @@ A dead-simple Slack bot built with Bolt for Python. No Docker, no complexity, ju
 
 ## Quick Start (Local Development)
 
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). Install it once with
+`curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv`).
+
 ```bash
 # 1. Clone and setup
 cd PWRUP_slack_bot
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv sync          # creates .venv, installs the locked dependencies
 
 # 2. Configure environment
 cp .env.example .env
 # Edit .env with your Slack tokens (see Setup Guide below)
 
 # 3. Run the bot
-python main.py
+uv run main.py
+```
+
+Useful uv commands:
+
+```bash
+uv add <package>        # add a dependency (updates pyproject.toml + uv.lock)
+uv remove <package>     # drop a dependency
+uv lock --upgrade       # refresh the lockfile to the latest allowed versions
+uv sync --locked        # install exactly what uv.lock specifies (use in CI/deploy)
 ```
 
 ---
@@ -100,8 +110,10 @@ python main.py
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install Python 3 and pip
-sudo apt install python3 python3-pip python3-venv curl -y
+# Install curl, then uv (uv provides the pinned Python itself)
+sudo apt install curl -y
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ### Deployment Steps
@@ -122,10 +134,8 @@ cd SlackBot
 
 ```bash
 cd /opt/SlackBot
-sudo python3 -m venv venv
-sudo chown -R $USER:$USER venv
-source venv/bin/activate
-pip install -r requirements.txt
+sudo chown -R $USER:$USER .
+uv sync --locked
 ```
 
 #### 3. Configure Environment
@@ -169,9 +179,9 @@ After=network.target
 Type=simple
 User=ubuntu
 WorkingDirectory=/opt/SlackBot
-Environment="PATH=/opt/SlackBot/venv/bin"
+Environment="PATH=/opt/SlackBot/.venv/bin"
 EnvironmentFile=/opt/SlackBot/.env
-ExecStart=/opt/SlackBot/venv/bin/python main.py
+ExecStart=/opt/SlackBot/.venv/bin/python main.py
 Restart=always
 RestartSec=10
 
@@ -373,8 +383,20 @@ cloudflared tunnel list
 
 ```
 PWRUP_slack_bot/
-├── main.py              # Main bot code
-├── requirements.txt     # Python dependencies
+├── main.py              # Entrypoint: builds the app, registers handlers, starts it
+├── config.py            # Environment configuration
+├── commands/            # Slash commands
+│   ├── ping.py          # /ping
+│   └── add_all.py       # /add-all plus its Confirm/Cancel buttons
+├── events/              # Event subscriptions
+│   ├── channels.py      # channel_created -> auto-join
+│   └── mentions.py      # app_mention -> greeting
+├── utils/
+│   ├── slack.py         # Shared Slack API helpers
+│   └── autojoin.py      # Background join-all-public-channels on startup
+├── pyproject.toml       # Project metadata + dependencies (uv)
+├── uv.lock              # Pinned dependency versions (commit this)
+├── .python-version      # Pinned Python version (3.12)
 ├── .env.example        # Environment template
 ├── .env                # Your actual config (git-ignored)
 ├── .gitignore          # Git ignore rules
