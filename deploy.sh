@@ -22,7 +22,14 @@ echo ""
 # Step 1: Install system dependencies
 echo "📦 Step 1: Installing system dependencies..."
 sudo apt update
-sudo apt install -y python3 python3-pip python3-venv curl
+sudo apt install -y curl
+
+# Install uv (manages Python and dependencies)
+if ! command -v uv >/dev/null 2>&1; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+echo "✅ uv $(uv --version)"
 
 # Step 2: Install Cloudflare Tunnel
 echo ""
@@ -35,10 +42,8 @@ echo "✅ Cloudflare Tunnel installed"
 # Step 3: Setup Python virtual environment
 echo ""
 echo "🐍 Step 3: Setting up Python virtual environment..."
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+# Installs the pinned Python and the exact locked dependency versions into .venv
+uv sync --locked
 
 # Step 4: Setup environment file
 echo ""
@@ -60,7 +65,7 @@ fi
 echo ""
 echo "🧪 Step 5: Testing the bot..."
 echo "Starting bot for 5 seconds to test..."
-timeout 5 python main.py || true
+timeout 5 uv run main.py || true
 echo "✅ Bot test complete"
 
 # Step 6: Setup systemd service for bot
@@ -77,9 +82,9 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR
-Environment="PATH=$INSTALL_DIR/venv/bin"
+Environment="PATH=$INSTALL_DIR/.venv/bin"
 EnvironmentFile=$INSTALL_DIR/.env
-ExecStart=$INSTALL_DIR/venv/bin/python main.py
+ExecStart=$INSTALL_DIR/.venv/bin/python main.py
 Restart=always
 RestartSec=10
 

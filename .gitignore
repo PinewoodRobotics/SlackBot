@@ -10,7 +10,10 @@ __pycache__/
 venv/
 env/
 ENV/
-.venv
+.venv/
+
+# uv (uv.lock is intentionally committed)
+.uv-cache/
 
 # IDE
 .vscode/
