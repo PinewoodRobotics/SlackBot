@@ -102,7 +102,33 @@ uv sync --locked        # install exactly what uv.lock specifies (use in CI/depl
 
 ---
 
-## 🚀 Ubuntu Server Deployment
+## 🚀 Production Deployment (Coolify)
+
+The bot runs at **https://slack.pinewoodrobotics.org** on the Coolify instance at
+`coolify.techclub.pw`, built from the `Dockerfile` in this repo and served by
+gunicorn via `wsgi.py`. Slack reaches it over HTTP at `/slack/events`; Socket Mode
+is not used in production.
+
+**Pushing to `main` deploys.** A GitHub push webhook notifies Coolify, which
+rebuilds and restarts the container. To deploy without pushing:
+
+```bash
+coolify deploy uuid kckbia9skc8pzyz1vv3vvccr --force
+coolify app deployments logs kckbia9skc8pzyz1vv3vvccr --follow
+coolify app logs kckbia9skc8pzyz1vv3vvccr --follow
+```
+
+Environment variables live in Coolify, not in a `.env` file. `SLACK_APP_TOKEN` is
+deliberately unset — setting it would flip the bot into Socket Mode.
+
+`GET /health` returns `{"status":"ok"}` and is what the container healthcheck probes.
+
+---
+
+## 🚀 Ubuntu Server Deployment (legacy)
+
+The systemd + Cloudflare Tunnel setup below predates the Coolify deployment and is
+kept for reference.
 
 ### Prerequisites
 
