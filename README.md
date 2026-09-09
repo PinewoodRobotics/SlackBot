@@ -7,6 +7,7 @@ A dead-simple Slack bot built with Bolt for Python. No Docker, no complexity, ju
 - **`/ping` slash command** → Responds with "Pong!"
 - **"hello" message listener** → Detects "hello" (case-insensitive) and responds with "Hey there!"
 - **`/add-all` slash command** → Adds all workspace members to the channel with confirmation
+- **`-poll` auto-reactions** → Messages containing `-poll` get the same checkmark / x-mark reactions as the Quick Poll app. Skipped in `#transit`, `#announcements`, and `#food-orders` so those rooms are not double-reacted.
 
 ## Quick Start (Local Development)
 
@@ -61,6 +62,7 @@ uv sync --locked        # install exactly what uv.lock specifies (use in CI/depl
    - `channels:read` - Read channel info
    - `channels:manage` - Invite users to channels
    - `groups:write` - Invite users to private channels
+   - `reactions:write` - Seed `-poll` checkmark / x-mark reactions
 
 4. Scroll up and click **"Install to Workspace"**
 5. Authorize the app
@@ -329,6 +331,24 @@ In any channel where the bot is added:
 ```
 Expected: Ephemeral message (only visible to you) showing all members to be added with Confirm/Cancel buttons. Click Confirm to add them all.
 
+### Test `-poll` auto-reactions
+
+In any channel **except** `#transit`, `#announcements`, and `#food-orders` (Quick Poll already seeds those):
+
+```
+test -poll
+```
+
+Expected: the bot adds `:sf-symbols_checkmark-square-fill:` then `:sf-symbols_xmark-square-fill:` to the message.
+
+In those three excluded channels the bot must add nothing. Requires the Slack app to have the `reactions:write` bot scope (add it under OAuth & Permissions in the Slack app UI; this repo cannot grant it).
+
+Unit tests for the trigger / exclusion logic:
+
+```
+uv run python -m unittest tests.test_poll
+```
+
 ---
 
 ## 🔧 Useful Commands
@@ -416,7 +436,10 @@ PWRUP_slack_bot/
 │   └── add_all.py       # /add-all plus its Confirm/Cancel buttons
 ├── events/              # Event subscriptions
 │   ├── channels.py      # channel_created -> auto-join
-│   └── mentions.py      # app_mention -> greeting
+│   ├── mentions.py      # app_mention -> greeting
+│   └── poll.py          # message containing -poll -> seed reactions
+├── tests/
+│   └── test_poll.py     # -poll trigger, exclusions, reaction seeding
 ├── utils/
 │   ├── slack.py         # Shared Slack API helpers
 │   └── autojoin.py      # Background join-all-public-channels on startup
