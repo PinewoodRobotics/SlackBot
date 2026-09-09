@@ -10,10 +10,10 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 import config
 from commands import add_all, ping
-from events import channels, mentions
+from events import channels, mentions, poll
 from utils.autojoin import join_all_public_channels_async
 
-REGISTRARS = (ping, add_all, channels, mentions)
+REGISTRARS = (ping, add_all, channels, mentions, poll)
 
 log = logging.getLogger(__name__)
 
