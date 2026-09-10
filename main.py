@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_sdk.http_retry.builtin_handlers import RateLimitErrorRetryHandler
 
 import config
 from commands import add_all, ping
@@ -26,6 +27,7 @@ def build_app():
         # default pool of 5 starves once an /add-all invite loop takes a thread.
         listener_executor=ThreadPoolExecutor(max_workers=10),
     )
+    app.client.retry_handlers.append(RateLimitErrorRetryHandler(max_retry_count=2))
     for module in REGISTRARS:
         module.register(app)
     return app
