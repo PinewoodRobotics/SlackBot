@@ -11,10 +11,10 @@ from slack_sdk.http_retry.builtin_handlers import RateLimitErrorRetryHandler
 
 import config
 from commands import add_all, ping
-from events import channels, mentions, poll
+from events import channels, keyword_reactions, mentions, poll
 from utils.autojoin import join_all_public_channels_async
 
-REGISTRARS = (ping, add_all, channels, mentions, poll)
+REGISTRARS = (ping, add_all, channels, mentions, poll, keyword_reactions)
 
 log = logging.getLogger(__name__)
 

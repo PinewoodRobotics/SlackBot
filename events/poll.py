@@ -17,12 +17,16 @@ log = logging.getLogger(__name__)
 _ALLOWED_SUBTYPES = frozenset({"file_share", "thread_broadcast"})
 
 
-def should_seed_poll_reactions(event):
+def is_user_message(event):
     if event.get("bot_id"):
         return False
 
     subtype = event.get("subtype")
-    if subtype and subtype not in _ALLOWED_SUBTYPES:
+    return not subtype or subtype in _ALLOWED_SUBTYPES
+
+
+def should_seed_poll_reactions(event):
+    if not is_user_message(event):
         return False
 
     if event.get("channel") in config.QUICK_POLL_CHANNEL_IDS:
