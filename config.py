@@ -39,12 +39,6 @@ POLL_REACTION_EMOJIS = (
 )
 
 # Keyword auto-reactions, replacing Slack's built-in "automated messages" which
-# reply with the emoji as a message. Each entry is (emoji name, regex); matches are
-# case-insensitive and must land on whole words, mirroring Slack's own matching.
-KEYWORD_REACTIONS = (
-    ("nooo", r"no{3,}"),
-    (
-        "67",
-        r"(?:6|six)\s*(?:-|&|and|or|to|\s)?\s*(?:7|seven)|sixty[ -]seven",
-    ),
-)
+# reply with the emoji as a message. Matching lives in events/keyword_reactions.py.
+NOOO_EMOJI = "nooo"
+SIX_SEVEN_EMOJI = "67"
