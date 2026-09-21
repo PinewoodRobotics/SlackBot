@@ -37,17 +37,15 @@ def add_reactions(client, channel, ts, names):
             )
 
 
-def register(app):
-    @app.event("message")
-    def handle_message(event, client):
-        if not is_user_message(event):
-            return
+def handle_message(event, client):
+    if not is_user_message(event):
+        return
 
-        names = matching_reactions(event.get("text") or "")
-        channel = event.get("channel")
-        ts = event.get("ts")
-        if not names or not channel or not ts:
-            return
+    names = matching_reactions(event.get("text") or "")
+    channel = event.get("channel")
+    ts = event.get("ts")
+    if not names or not channel or not ts:
+        return
 
-        log.info("Reacting %s to %s in %s", names, ts, channel)
-        add_reactions(client, channel, ts, names)
+    log.info("Reacting %s to %s in %s", names, ts, channel)
+    add_reactions(client, channel, ts, names)

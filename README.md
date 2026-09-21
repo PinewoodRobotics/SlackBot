@@ -438,6 +438,7 @@ PWRUP_slack_bot/
 ├── events/              # Event subscriptions
 │   ├── channels.py      # channel_created -> auto-join
 │   ├── mentions.py      # app_mention -> greeting
+│   ├── messages.py      # the one message listener; fans out to the two below
 │   ├── poll.py          # message containing -poll -> seed reactions
 │   └── keyword_reactions.py  # nooo / 67 -> react with the emoji
 ├── tests/

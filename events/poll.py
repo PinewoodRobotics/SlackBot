@@ -53,19 +53,17 @@ def seed_poll_reactions(client, channel, ts):
             )
 
 
-def register(app):
-    @app.event("message")
-    def handle_message(event, client):
-        if not should_seed_poll_reactions(event):
-            return
+def handle_message(event, client):
+    if not should_seed_poll_reactions(event):
+        return
 
-        channel = event.get("channel")
-        ts = event.get("ts")
-        if not channel or not ts:
-            return
+    channel = event.get("channel")
+    ts = event.get("ts")
+    if not channel or not ts:
+        return
 
-        log.info("Seeding -poll reactions on %s in %s", ts, channel)
-        seed_poll_reactions(client, channel, ts)
+    log.info("Seeding -poll reactions on %s in %s", ts, channel)
+    seed_poll_reactions(client, channel, ts)
 
 
 def _slack_error(exc):
