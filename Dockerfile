@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ARG PYTHON_IMAGE=python:3.12-slim-trixie
-ARG UV_VERSION=0.12.3
+ARG UV_VERSION=0.13.4
 
 # A stage of its own because --from does not expand build args.
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
