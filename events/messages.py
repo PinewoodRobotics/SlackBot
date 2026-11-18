@@ -4,9 +4,9 @@ Bolt stops at the first listener whose matcher accepts an event, so two
 @app.event("message") handlers would shadow each other. Fan out from here instead.
 """
 
-from events import keyword_reactions, poll
+from events import keyword_reactions, poll, wordle
 
-HANDLERS = (poll.handle_message, keyword_reactions.handle_message)
+HANDLERS = (poll.handle_message, keyword_reactions.handle_message, wordle.handle_message)
 
 
 def register(app):
