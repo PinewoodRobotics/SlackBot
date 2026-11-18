@@ -19,9 +19,10 @@ class WordleTest(unittest.TestCase):
         client = Mock()
         event = {"channel": config.WORDLE_CHANNEL_ID, "ts": "1.2", "text": SHARE.format(skill=99)}
         handle_message(event, client)
-        client.reactions_add.assert_called_once_with(
-            channel=config.WORDLE_CHANNEL_ID, timestamp="1.2", name="woooo"
-        )
+        client.reactions_add.assert_called_once()
+        kwargs = client.reactions_add.call_args.kwargs
+        self.assertEqual((kwargs["channel"], kwargs["timestamp"]), (config.WORDLE_CHANNEL_ID, "1.2"))
+        self.assertIn(kwargs["name"], config.PERFECT_SKILL_EMOJIS)
 
     def test_ignores_other_channels(self):
         client = Mock()

@@ -44,4 +44,4 @@ NOOO_EMOJI = "nooo"
 SIX_SEVEN_EMOJI = "67"
 
 WORDLE_CHANNEL_ID = "C09DZH7DLFQ"
-PERFECT_SKILL_EMOJI = "woooo"
+PERFECT_SKILL_EMOJIS = ("woooo", "skelly-dance-rainbow")

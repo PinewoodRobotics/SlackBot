@@ -1,6 +1,7 @@
-"""React :woooo: to WordleBot shares in #wordle that score Skill 99/99."""
+"""React to WordleBot shares in #wordle that score Skill 99/99."""
 
 import logging
+import random
 import re
 
 import config
@@ -26,4 +27,4 @@ def handle_message(event, client):
         return
 
     log.info("Perfect Wordle skill on %s", ts)
-    add_reactions(client, config.WORDLE_CHANNEL_ID, ts, [config.PERFECT_SKILL_EMOJI])
+    add_reactions(client, config.WORDLE_CHANNEL_ID, ts, [random.choice(config.PERFECT_SKILL_EMOJIS)])
