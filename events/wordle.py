@@ -1,7 +1,6 @@
-"""React to WordleBot shares in #wordle that score Skill 99/99."""
+"""React to WordleBot shares in #wordle that score 99/99 on Skill or Luck."""
 
 import logging
-import random
 import re
 
 import config
@@ -10,11 +9,14 @@ from events.poll import is_user_message
 
 log = logging.getLogger(__name__)
 
-_PERFECT_SKILL = re.compile(r"\bskill\s*99\s*/\s*99\b", re.IGNORECASE)
+_PERFECT = {
+    re.compile(r"\bskill\s*99\s*/\s*99\b", re.IGNORECASE): config.PERFECT_SKILL_EMOJI,
+    re.compile(r"\bluck\s*99\s*/\s*99\b", re.IGNORECASE): config.PERFECT_LUCK_EMOJI,
+}
 
 
-def is_perfect_skill(text):
-    return bool(_PERFECT_SKILL.search(text))
+def perfect_score_reactions(text):
+    return [emoji for pattern, emoji in _PERFECT.items() if pattern.search(text)]
 
 
 def handle_message(event, client):
@@ -23,8 +25,9 @@ def handle_message(event, client):
     if event.get("channel") != config.WORDLE_CHANNEL_ID:
         return
     ts = event.get("ts")
-    if not ts or not is_perfect_skill(event.get("text") or ""):
+    names = perfect_score_reactions(event.get("text") or "")
+    if not ts or not names:
         return
 
-    log.info("Perfect Wordle skill on %s", ts)
-    add_reactions(client, config.WORDLE_CHANNEL_ID, ts, [random.choice(config.PERFECT_SKILL_EMOJIS)])
+    log.info("Perfect Wordle score on %s: %s", ts, names)
+    add_reactions(client, config.WORDLE_CHANNEL_ID, ts, names)

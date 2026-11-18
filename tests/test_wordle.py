@@ -2,29 +2,33 @@ import unittest
 from unittest.mock import Mock
 
 import config
-from events.wordle import handle_message, is_perfect_skill
+from events.wordle import handle_message, perfect_score_reactions
 
-SHARE = "Wordle 1,977 3/6\n\n:large_green_square:\n\nWordleBot\nSkill {skill}/99\nLuck 99/99"
+SHARE = "Wordle 1,977 3/6\n\n:large_green_square:\n\nWordleBot\nSkill {skill}/99\nLuck {luck}/99"
 
 
 class WordleTest(unittest.TestCase):
-    def test_matches_only_skill_99(self):
-        self.assertTrue(is_perfect_skill(SHARE.format(skill=99)))
-        self.assertTrue(is_perfect_skill("skill 99 / 99"))
-        for skill in (89, 9, 199):
-            self.assertFalse(is_perfect_skill(SHARE.format(skill=skill)), skill)
-        self.assertFalse(is_perfect_skill("Skill 62/99\nLuck 99/99"))
+    def test_perfect_scores(self):
+        cases = {
+            (99, 76): ["woooo"],
+            (62, 99): ["skelly-dance-rainbow"],
+            (99, 99): ["woooo", "skelly-dance-rainbow"],
+            (89, 78): [],
+            (9, 199): [],
+        }
+        for (skill, luck), expected in cases.items():
+            self.assertEqual(perfect_score_reactions(SHARE.format(skill=skill, luck=luck)), expected)
+        self.assertEqual(perfect_score_reactions("skill 99 / 99"), ["woooo"])
 
     def test_reacts_in_wordle_channel(self):
         client = Mock()
-        event = {"channel": config.WORDLE_CHANNEL_ID, "ts": "1.2", "text": SHARE.format(skill=99)}
+        event = {"channel": config.WORDLE_CHANNEL_ID, "ts": "1.2", "text": SHARE.format(skill=99, luck=50)}
         handle_message(event, client)
-        client.reactions_add.assert_called_once()
-        kwargs = client.reactions_add.call_args.kwargs
-        self.assertEqual((kwargs["channel"], kwargs["timestamp"]), (config.WORDLE_CHANNEL_ID, "1.2"))
-        self.assertIn(kwargs["name"], config.PERFECT_SKILL_EMOJIS)
+        client.reactions_add.assert_called_once_with(
+            channel=config.WORDLE_CHANNEL_ID, timestamp="1.2", name="woooo"
+        )
 
     def test_ignores_other_channels(self):
         client = Mock()
-        handle_message({"channel": "C1", "ts": "1.2", "text": SHARE.format(skill=99)}, client)
+        handle_message({"channel": "C1", "ts": "1.2", "text": SHARE.format(skill=99, luck=99)}, client)
         client.reactions_add.assert_not_called()
