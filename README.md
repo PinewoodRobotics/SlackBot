@@ -9,7 +9,7 @@ A dead-simple Slack bot built with Bolt for Python. No Docker, no complexity, ju
 - **`/add-all` slash command** → Adds all workspace members to the channel with confirmation
 - **`-poll` auto-reactions** → Messages containing `-poll` get the same checkmark / x-mark reactions as the Quick Poll app. Skipped in `#transit`, `#announcements`, and `#food-orders` so those rooms are not double-reacted.
 - **Keyword auto-reactions** → Whole-word matches of `nooo` (any length) or `67` in its spelled-out forms (`six seven`, `6-7`, `sixty-seven`, …) get the matching `:nooo:` / `:67:` reaction. Replaces Slack's automated messages, which reply with the emoji instead of reacting.
-- **Perfect Wordle** → WordleBot shares in `#wordle` get `:woooo:` for `Skill 99/99` and `:skelly-dance-rainbow:` for `Luck 99/99`.
+- **Perfect Wordle** → WordleBot shares in `#wordle` get `:woooo:` for `Skill 99/99` and `:skelly-dance-rainbow:` for `Luck 99/99` or a 1/6 or 2/6 solve.
 
 ## Quick Start (Local Development)
 

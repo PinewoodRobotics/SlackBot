@@ -1,4 +1,4 @@
-"""React to WordleBot shares in #wordle that score 99/99 on Skill or Luck."""
+"""React to WordleBot shares in #wordle that score 99/99 on Skill or Luck, or solve in 1 or 2."""
 
 import logging
 import re
@@ -9,14 +9,18 @@ from events.poll import is_user_message
 
 log = logging.getLogger(__name__)
 
-_PERFECT = {
-    re.compile(r"\bskill\s*99\s*/\s*99\b", re.IGNORECASE): config.PERFECT_SKILL_EMOJI,
-    re.compile(r"\bluck\s*99\s*/\s*99\b", re.IGNORECASE): config.PERFECT_LUCK_EMOJI,
-}
+_PERFECT_SKILL = re.compile(r"\bskill\s*99\s*/\s*99\b", re.IGNORECASE)
+_PERFECT_LUCK = re.compile(r"\bluck\s*99\s*/\s*99\b", re.IGNORECASE)
+_QUICK_SOLVE = re.compile(r"\bwordle\s+[\d,]+\s+[12]\s*/\s*6\b", re.IGNORECASE)
 
 
 def perfect_score_reactions(text):
-    return [emoji for pattern, emoji in _PERFECT.items() if pattern.search(text)]
+    names = []
+    if _PERFECT_SKILL.search(text):
+        names.append(config.PERFECT_SKILL_EMOJI)
+    if _PERFECT_LUCK.search(text) or _QUICK_SOLVE.search(text):
+        names.append(config.PERFECT_LUCK_EMOJI)
+    return names
 
 
 def handle_message(event, client):
